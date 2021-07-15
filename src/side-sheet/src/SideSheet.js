@@ -1,5 +1,5 @@
 import React, { memo } from 'react'
-import { css } from 'glamor'
+import { css } from 'otion'
 import PropTypes from 'prop-types'
 import { Position } from '../../constants'
 import { Pane } from '../../layers'

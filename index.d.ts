@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { extractStyles as boxExtractStyles, BoxProps, BoxComponent, PolymorphicBoxProps } from 'ui-box'
-import { StyleAttribute, CSSProperties } from 'glamor'
+import { Properties } from 'csstype'
 import { DownshiftProps } from 'downshift'
 import { TransitionProps, TransitionStatus } from 'react-transition-group/Transition'
 

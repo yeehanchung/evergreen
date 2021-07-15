@@ -1,5 +1,5 @@
 import React, { memo, forwardRef } from 'react'
-import { css } from 'glamor'
+import { css } from 'otion'
 import PropTypes from 'prop-types'
 import Box, { spacing, position, layout } from 'ui-box'
 import { useStyleConfig } from '../../hooks'

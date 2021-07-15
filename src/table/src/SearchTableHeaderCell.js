@@ -1,5 +1,5 @@
 import React, { memo, forwardRef, useCallback } from 'react'
-import { css } from 'glamor'
+import { css } from 'otion'
 import PropTypes from 'prop-types'
 import { SearchIcon } from '../../icons'
 import { IconWrapper } from '../../icons/src/IconWrapper'

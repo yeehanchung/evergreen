@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react'
-import { css } from 'glamor'
+import { css } from 'otion'
 import PropTypes from 'prop-types'
 import Box from 'ui-box'
 import { Position } from '../../constants'

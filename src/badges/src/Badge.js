@@ -1,6 +1,6 @@
 import React, { memo, forwardRef } from 'react'
 import cx from 'classnames'
-import { css } from 'glamor'
+import { css } from 'otion'
 import PropTypes from 'prop-types'
 import { useStyleConfig } from '../../hooks'
 import { Strong } from '../../typography'

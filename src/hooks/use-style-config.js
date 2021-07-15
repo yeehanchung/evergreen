@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react'
-import { css } from 'glamor'
 import merge from 'lodash.merge'
+import { css } from 'otion'
 import isEqual from 'react-fast-compare'
 import { splitBoxProps } from 'ui-box'
 import { useTheme, get, resolveThemeTokens } from '../theme'
@@ -25,7 +25,7 @@ import { useTheme, get, resolveThemeTokens } from '../theme'
  */
 
 /** @typedef {import('ui-box').EnhancerProps & StateStyles} Style */
-/** @typedef {import('ui-box').EnhancerProps & import('glamor').CSSProperties} GlamorAndBoxStyle */
+/** @typedef {import('ui-box').EnhancerProps & import('otion').CSSProperties} GlamorAndBoxStyle */
 
 /**
  * @typedef {object} StyleConfig

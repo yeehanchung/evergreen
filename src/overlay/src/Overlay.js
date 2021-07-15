@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect, useRef } from 'react'
 import cx from 'classnames'
-import { css } from 'glamor'
+import { css } from 'otion'
 import PropTypes from 'prop-types'
 import { Transition } from 'react-transition-group'
 import Box from 'ui-box'

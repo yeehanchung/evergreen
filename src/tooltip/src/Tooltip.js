@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect } from 'react'
 import cx from 'classnames'
-import { css as glamorCss } from 'glamor'
 import debounce from 'lodash.debounce'
+import { css as glamorCss } from 'otion'
 import PropTypes from 'prop-types'
 import { Position } from '../../constants'
 import { useId } from '../../hooks'

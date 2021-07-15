@@ -1,4 +1,4 @@
-import { rehydrate } from 'glamor'
+import { hydrate as otionHydrate } from 'otion'
 import { hydrate as boxHydrate } from 'ui-box'
 import canUseDom from '../../lib/canUseDom'
 
@@ -12,7 +12,7 @@ export function hydrate(hydration) {
   }
 
   if (hydration.glamorIds) {
-    rehydrate(hydration.glamorIds)
+    otionHydrate(hydration.glamorIds)
   }
 }
 

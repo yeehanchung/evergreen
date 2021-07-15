@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react'
-import { css } from 'glamor'
+import { css } from 'otion'
 import PropTypes from 'prop-types'
 import { StackingOrder } from '../../constants'
 import Toast from './Toast'

@@ -1,4 +1,4 @@
-import { css } from 'glamor'
+import { css } from 'otion'
 
 /**
  * Memoize a function that takes N number of strings as arguments and returns

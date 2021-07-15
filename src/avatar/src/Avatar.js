@@ -1,6 +1,6 @@
 import React, { useState, memo, forwardRef } from 'react'
 import cx from 'classnames'
-import { css } from 'glamor'
+import { css } from 'otion'
 import PropTypes from 'prop-types'
 import Box from 'ui-box'
 import { useStyleConfig } from '../../hooks'
