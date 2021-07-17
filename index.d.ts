@@ -2114,11 +2114,12 @@ interface TableVirtualBodyProps extends PaneOwnProps {
    */
   allowAutoHeight?: boolean
   /**
-   * The overscanCount property passed to react-tiny-virtual-list.
+   * The number of items (rows or columns) to render outside of the visible area.
+   * Note that overscanning too much can negatively impact performance. By default, List overscans by one item.
    */
   overscanCount?: number
   /**
-   * When passed, this is used as the `estimatedItemSize` in react-tiny-virtual-list.
+   * When passed, this is used as the `estimatedItemSize` in react-window
    * Only when `allowAutoHeight` and`useAverageAutoHeightEstimation` are false.
    */
   estimatedItemSize?: number
@@ -2128,17 +2129,18 @@ interface TableVirtualBodyProps extends PaneOwnProps {
    */
   useAverageAutoHeightEstimation?: boolean
   /**
-   * The scrollToIndex property passed to react-tiny-virtual-list
+   * The scrollToIndex property which, when changed, will scrollTo the item at that index.
    */
   scrollToIndex?: number
   /**
-   * The scrollOffset property passed to react-tiny-virtual-list
+   * The scrollOffset property which, when changed, will scrollTo that offset.
    */
   scrollOffset?: number
   /**
-   * The scrollToAlignment property passed to react-tiny-virtual-list
+   * The scrollToAlignment property used in combination with scrollToIndex
+   * @see {@link https://react-window.vercel.app/#/api/FixedSizeList}
    */
-  scrollToAlignment?: 'start' | 'center' | 'end' | 'auto'
+  scrollToAlignment?: 'start' | 'center' | 'end' | 'auto' | 'smart'
 }
 
 export interface TableOwnProps extends PaneOwnProps {}

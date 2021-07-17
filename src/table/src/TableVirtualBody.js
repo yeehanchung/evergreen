@@ -1,7 +1,7 @@
-import React, { memo, useState, useEffect } from 'react'
+import React, { memo, useState, useEffect, useRef } from 'react'
 import debounce from 'lodash.debounce'
 import PropTypes from 'prop-types'
-import VirtualList from 'react-tiny-virtual-list'
+import { VariableSizeList } from 'react-window'
 import { useForceUpdate } from '../../hooks'
 import { Pane } from '../../layers'
 
@@ -10,7 +10,7 @@ const TableVirtualBody = memo(function TableVirtualBody(props) {
     allowAutoHeight = false,
     children: inputChildren,
     defaultHeight = 48,
-    estimatedItemSize,
+    estimatedItemSize = 48,
     height: paneHeight,
     onScroll,
     overscanCount = 5,
@@ -26,9 +26,22 @@ const TableVirtualBody = memo(function TableVirtualBody(props) {
   let autoHeightRefs = []
   let averageAutoHeight = defaultHeight
 
-  const [paneRef, setPaneRef] = useState()
+  const paneRef = useRef(null)
+  const listRef = useRef(null)
   const [isIntegerHeight, setIsIntegerHeight] = useState(false)
   const [calculatedHeight, setCalculatedHeight] = useState(0)
+
+  useEffect(() => {
+    if (listRef.current && typeof scrollToIndex === 'number') {
+      listRef.current.scrollToItem(scrollToIndex, scrollToAlignment)
+    }
+  }, [scrollToIndex, scrollToAlignment])
+
+  useEffect(() => {
+    if (listRef.current && typeof scrollOffset === 'number') {
+      listRef.current.scrollTo(scrollOffset)
+    }
+  }, [scrollOffset])
 
   const updateOnResize = () => {
     autoHeights = []
@@ -39,8 +52,8 @@ const TableVirtualBody = memo(function TableVirtualBody(props) {
     if (isIntegerHeight) return
 
     // Return if we are in a weird edge case in which the ref is no longer valid.
-    if (paneRef && paneRef instanceof Node) {
-      const tempCalculatedHeight = paneRef.offsetHeight
+    if (paneRef.current instanceof Node) {
+      const tempCalculatedHeight = paneRef.current.offsetHeight
 
       if (tempCalculatedHeight > 0) {
         // Save the calculated height which is needed for the VirtualList.
@@ -66,10 +79,10 @@ const TableVirtualBody = memo(function TableVirtualBody(props) {
   }, [props.height])
 
   useEffect(() => {
-    if (paneRef && paneRef instanceof Node) {
+    if (paneRef.current instanceof Node) {
       updateOnResize()
     }
-  }, [paneRef])
+  }, [])
 
   // Mirrors functionality of componentDidMount and componentWillUnmount.
   // By passing an empty array, will only run on first render, the function returned
@@ -136,115 +149,95 @@ const TableVirtualBody = memo(function TableVirtualBody(props) {
     })
   }
 
-  const getItemSize = children => {
-    // Prefer to return a array of all heights.
-    if (!allowAutoHeight) {
-      return children.map(child => {
-        if (!React.isValidElement(child)) return defaultHeight
-        const { height } = child.props
-
-        if (Number.isInteger(height)) {
-          return height
-        }
-
-        return defaultHeight
-      })
-    }
-
-    // If allowAutoHeight is true, return a function instead.
-    const itemSizeFn = index => {
-      if (!React.isValidElement(children[index])) return defaultHeight
-      const { height } = children[index].props
-
-      // When the height is number simply, simply return it.
-      if (Number.isInteger(height)) {
-        return height
-      }
-
-      // When allowAutoHeight is set and  the height is set to "auto"...
-      if (allowAutoHeight && children[index].props.height === 'auto') {
-        // ... and the height is calculated, return the calculated height.
-        if (autoHeights[index]) return autoHeights[index]
-
-        // ... if the height is not yet calculated, return the averge
-        if (useAverageAutoHeightEstimation) return averageAutoHeight
-      }
-
-      // Return the default height.
-      return defaultHeight
-    }
-
-    return itemSizeFn
-  }
-
   // Children always needs to be an array.
   const children = Array.isArray(inputChildren) ? inputChildren : React.Children.toArray(inputChildren)
 
-  const itemSize = getItemSize(children)
+  const itemSizeFn = index => {
+    const item = children[index]
+    if (!React.isValidElement(item)) return defaultHeight
+
+    const { height } = item.props
+    // When the height is number simply, simply return it.
+    if (Number.isInteger(height)) {
+      return height
+    }
+
+    // When allowAutoHeight is set and the height is set to "auto"...
+    if (allowAutoHeight && height === 'auto') {
+      // ... and the height is calculated, return the calculated height.
+      if (autoHeights[index]) return autoHeights[index]
+
+      // ... if the height is not yet calculated, return the averge
+      if (useAverageAutoHeightEstimation) return averageAutoHeight
+    }
+
+    // If all else fails, return the default height.
+    return defaultHeight
+  }
+
+  const RowRenderer = ({ index, style }) => {
+    const child = children[index]
+    const key = child.key || index
+    const props = {
+      key,
+      style
+    }
+
+    // If some children are strings by accident, support this gracefully.
+    if (!React.isValidElement(child)) {
+      if (typeof child === 'string') {
+        return <div {...props}>{child}</div>
+      }
+
+      return <div {...props}>&nbsp;</div>
+    }
+
+    // When allowing height="auto" for rows, and a auto height item is
+    // rendered for the first time...
+    if (
+      allowAutoHeight &&
+      React.isValidElement(child) &&
+      child.props.height === 'auto' &&
+      // ... and only when the height is not already been calculated.
+      !autoHeights.current[index]
+    ) {
+      // ... render the item in a helper div, the ref is used to calculate
+      // the height of its children.
+      return (
+        <div
+          ref={ref => onVirtualHelperRef(index, ref)}
+          data-virtual-index={index}
+          {...props}
+          style={{
+            opacity: 0,
+            ...props.style
+          }}
+        >
+          {child}
+        </div>
+      )
+    }
+
+    // When allowAutoHeight is false, or when the height is known.
+    // Simply render the item.
+    return React.cloneElement(child, props)
+  }
 
   return (
-    <Pane data-evergreen-table-body ref={setPaneRef} height={paneHeight} flex="1" overflow="hidden" {...rest}>
-      <VirtualList
+    <Pane data-evergreen-table-body ref={paneRef} height={paneHeight} flex="1" overflow="hidden" {...rest}>
+      <VariableSizeList
+        ref={listRef}
         height={isIntegerHeight ? paneHeight : calculatedHeight}
         width="100%"
-        estimatedItemSize={
-          allowAutoHeight && useAverageAutoHeightEstimation ? averageAutoHeight : estimatedItemSize || null
-        }
-        itemSize={itemSize}
+        estimatedItemSize={allowAutoHeight && useAverageAutoHeightEstimation ? averageAutoHeight : estimatedItemSize}
+        itemSize={itemSizeFn}
         overscanCount={overscanCount}
         itemCount={React.Children.count(children)}
-        scrollToIndex={scrollToIndex}
-        scrollOffset={scrollOffset}
-        scrollToAlignment={scrollToAlignment}
+        initialScrollOffset={scrollOffset}
         onScroll={onScroll}
-        renderItem={({ index, style }) => {
-          const child = children[index]
-          const key = child.key || index
-          const props = {
-            key,
-            style
-          }
-
-          // If some children are strings by accident, support this gracefully.
-          if (!React.isValidElement(child)) {
-            if (typeof child === 'string') {
-              return <div {...props}>{child}</div>
-            }
-
-            return <div {...props}>&nbsp;</div>
-          }
-
-          // When allowing height="auto" for rows, and a auto height item is
-          // rendered for the first time...
-          if (
-            allowAutoHeight &&
-            React.isValidElement(child) &&
-            child.props.height === 'auto' &&
-            // ... and only when the height is not already been calculated.
-            !autoHeights[index]
-          ) {
-            // ... render the item in a helper div, the ref is used to calculate
-            // the height of its children.
-            return (
-              <div
-                ref={ref => onVirtualHelperRef(index, ref)}
-                data-virtual-index={index}
-                {...props}
-                style={{
-                  opacity: 0,
-                  ...props.style
-                }}
-              >
-                {child}
-              </div>
-            )
-          }
-
-          // When allowAutoHeight is false, or when the height is known.
-          // Simply render the item.
-          return React.cloneElement(child, props)
-        }}
-      />
+      >
+        {RowRenderer}
+      </VariableSizeList>
     </Pane>
   )
 })
