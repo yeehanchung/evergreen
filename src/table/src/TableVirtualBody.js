@@ -305,12 +305,12 @@ TableVirtualBody.propTypes = {
   allowAutoHeight: PropTypes.bool,
 
   /**
-   * The overscanCount property passed to react-tiny-virtual-list.
+   * The overscanCount property passed to react-window.
    */
   overscanCount: PropTypes.number,
 
   /**
-   * When passed, this is used as the `estimatedItemSize` in react-tiny-virtual-list.
+   * When passed, this is used as the `estimatedItemSize` in react-window.
    * Only when `allowAutoHeight` and`useAverageAutoHeightEstimation` are false.
    */
   estimatedItemSize: PropTypes.number,
@@ -322,19 +322,19 @@ TableVirtualBody.propTypes = {
   useAverageAutoHeightEstimation: PropTypes.bool,
 
   /**
-   * The scrollToIndex property passed to react-tiny-virtual-list
+   * The scrollToIndex property passed to react-window.
    */
   scrollToIndex: PropTypes.number,
   /**
-   * The scrollOffset property passed to react-tiny-virtual-list
+   * The scrollOffset property passed to react-window.
    */
   scrollOffset: PropTypes.number,
   /**
-   * The scrollToAlignment property passed to react-tiny-virtual-list
+   * The scrollToAlignment property passed to react-window.
    */
   scrollToAlignment: PropTypes.oneOf(['start', 'center', 'end', 'auto']),
   /**
-   * The onScroll callback passed to react-tiny-virtual-list
+   * The onScroll callback passed to react-window.
    */
   onScroll: PropTypes.func
 }

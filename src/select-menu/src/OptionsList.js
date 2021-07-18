@@ -1,7 +1,8 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import fuzzaldrin from 'fuzzaldrin-plus'
 import PropTypes from 'prop-types'
-import VirtualList from 'react-tiny-virtual-list'
+import { FixedSizeList, areEqual } from 'react-window'
+import { useLatest } from '../../hooks'
 import { SearchIcon } from '../../icons'
 import { Image } from '../../image'
 import { Pane } from '../../layers'
@@ -32,6 +33,31 @@ const defaultRenderItem = props => {
   )
 }
 
+/* eslint-disable react/prop-types */
+const Row = memo(({ data, index, style }) => {
+  const { handleSelect, isMultiSelect, isSelected, onDeselect, optionSize, options, renderItem } = data
+  const item = options[index]
+  const isItemSelected = isSelected(item)
+
+  const itemProps = {
+    key: item.value,
+    label: item.label,
+    icon: item.icon,
+    item,
+    style,
+    height: optionSize,
+    onSelect: () => handleSelect(item),
+    onDeselect: () => onDeselect(item),
+    isSelectable: !isItemSelected || isMultiSelect,
+    isSelected: isItemSelected,
+    disabled: item.disabled,
+    tabIndex: 0
+  }
+
+  return renderItem(itemProps)
+}, areEqual)
+/* eslint-enable react/prop-types */
+
 const OptionsList = memo(function OptionsList(props) {
   const {
     options: originalOptions = [],
@@ -55,16 +81,19 @@ const OptionsList = memo(function OptionsList(props) {
   } = props
 
   const [searchValue, setSearchValue] = useState(defaultSearchValue)
-  const [searchRef, setSearchRef] = useState(null)
+  const listRef = useRef(null)
+  const searchRef = useRef()
   const requestId = useRef()
   const theme = useTheme()
   const { tokens } = theme
+  const selectedRef = useLatest(selected)
 
   const isSelected = useCallback(
     item => {
-      return Boolean(selected.find(selectedItem => selectedItem === item.value))
+      return Boolean(selectedRef.current.find(selectedItem => selectedItem === item.value))
     },
-    [selected]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   )
 
   const optionLabels = useMemo(() => {
@@ -87,12 +116,18 @@ const OptionsList = memo(function OptionsList(props) {
     return fuzzyFilter(originalOptions, searchValue, { key: 'label' })
   }, [originalOptions, optionLabels, optionsFilter, searchValue])
 
-  const getCurrentIndex = useCallback(() => {
-    return options.findIndex(option => option.value === selected[selected.length - 1])
-  }, [selected, options])
+  const getCurrentIndex = useLatest(() => {
+    const lastSelection = selectedRef.current[selectedRef.current.length - 1]
+    return options.findIndex(option => option.value === lastSelection)
+  }, [options])
+
+  const lastSelectedIndex = useMemo(() => {
+    return getCurrentIndex.current()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected])
 
   const handleArrowUp = useCallback(() => {
-    let nextIndex = getCurrentIndex() - 1
+    let nextIndex = getCurrentIndex.current() - 1
 
     if (nextIndex < 0) {
       nextIndex = options.length - 1
@@ -106,7 +141,7 @@ const OptionsList = memo(function OptionsList(props) {
   }, [onSelect, options, getCurrentIndex, isSelected])
 
   const handleArrowDown = useCallback(() => {
-    let nextIndex = getCurrentIndex() + 1
+    let nextIndex = getCurrentIndex.current() + 1
 
     if (nextIndex === options.length) {
       nextIndex = 0
@@ -141,7 +176,7 @@ const OptionsList = memo(function OptionsList(props) {
   )
 
   const handleEnter = useCallback(() => {
-    const isSelected = getCurrentIndex() !== -1
+    const isSelected = getCurrentIndex.current() !== -1
 
     if (isSelected) {
       if (!isMultiSelect && closeOnSelect) {
@@ -149,13 +184,6 @@ const OptionsList = memo(function OptionsList(props) {
       }
     }
   }, [isMultiSelect, close, closeOnSelect, getCurrentIndex])
-
-  const handleDeselect = useCallback(
-    item => {
-      onDeselect(item)
-    },
-    [onDeselect]
-  )
 
   const handleKeyDown = useCallback(
     e => {
@@ -181,8 +209,8 @@ const OptionsList = memo(function OptionsList(props) {
   useEffect(() => {
     if (hasFilter) {
       requestId.current = requestAnimationFrame(() => {
-        if (searchRef) {
-          searchRef.focus()
+        if (searchRef.current) {
+          searchRef.current.focus()
         }
       })
 
@@ -192,11 +220,23 @@ const OptionsList = memo(function OptionsList(props) {
         window.removeEventListener('keydown', handleKeyDown)
       }
     }
-  }, [hasFilter, searchRef, handleKeyDown])
+  }, [hasFilter, handleKeyDown])
 
   const listHeight = height - (hasFilter ? 32 : 0)
-  const currentIndex = getCurrentIndex()
-  const scrollToIndex = currentIndex === -1 ? 0 : currentIndex
+
+  // When the lastSelectedIndex changes
+  // Try to programmatically scroll to the new position
+  useLayoutEffect(() => {
+    const scrollToIndex = lastSelectedIndex === -1 ? 0 : lastSelectedIndex
+    if (listRef.current && scrollToIndex) {
+      listRef.current.scrollToItem(scrollToIndex, 'auto')
+    }
+  }, [lastSelectedIndex])
+
+  const itemData = useMemo(
+    () => ({ handleSelect, isMultiSelect, isSelected, onDeselect, optionSize, options, renderItem }),
+    [handleSelect, isMultiSelect, isSelected, onDeselect, optionSize, options, renderItem]
+  )
 
   return (
     <Pane height={height} width={width} display="flex" flexDirection="column" {...rest}>
@@ -204,7 +244,7 @@ const OptionsList = memo(function OptionsList(props) {
         <TableHead height={32} backgroundColor={tokens.colors.gray50}>
           <SearchTableHeaderCell
             onChange={handleChange}
-            ref={setSearchRef}
+            ref={searchRef}
             borderRight={null}
             placeholder={filterPlaceholder}
             icon={filterIcon}
@@ -213,36 +253,17 @@ const OptionsList = memo(function OptionsList(props) {
       )}
       <Pane flex={1}>
         {options.length > 0 && (
-          <VirtualList
+          <FixedSizeList
+            ref={listRef}
             height={listHeight}
             width="100%"
             itemSize={optionSize}
             itemCount={options.length}
+            itemData={itemData}
             overscanCount={20}
-            scrollToAlignment="auto"
-            scrollToIndex={scrollToIndex || undefined}
-            renderItem={({ index, style }) => {
-              const item = options[index]
-              const isItemSelected = isSelected(item)
-
-              const itemProps = {
-                key: item.value,
-                label: item.label,
-                icon: item.icon,
-                item,
-                style,
-                height: optionSize,
-                onSelect: () => handleSelect(item),
-                onDeselect: () => handleDeselect(item),
-                isSelectable: !isItemSelected || isMultiSelect,
-                isSelected: isItemSelected,
-                disabled: item.disabled,
-                tabIndex: 0
-              }
-
-              return renderItem(itemProps)
-            }}
-          />
+          >
+            {Row}
+          </FixedSizeList>
         )}
       </Pane>
     </Pane>
