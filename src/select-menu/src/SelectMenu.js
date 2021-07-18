@@ -37,6 +37,18 @@ const SelectMenu = memo(function SelectMenu(props) {
 
   const selectedArray = useMemo(() => arrify(selected), [selected])
 
+  const listProps = useMemo(
+    () => ({
+      onSelect,
+      onDeselect,
+      onFilterChange,
+      selected: selectedArray,
+      renderItem: itemRenderer,
+      optionSize: itemHeight
+    }),
+    [onSelect, onDeselect, onFilterChange, selectedArray, itemRenderer, itemHeight]
+  )
+
   return (
     <Popover
       minWidth={width}
@@ -54,14 +66,7 @@ const SelectMenu = memo(function SelectMenu(props) {
           hasTitle={hasTitle}
           isMultiSelect={isMultiSelect}
           titleView={titleView}
-          listProps={{
-            onSelect,
-            onDeselect,
-            onFilterChange,
-            selected: selectedArray,
-            renderItem: itemRenderer,
-            optionSize: itemHeight
-          }}
+          listProps={listProps}
           close={close}
           detailView={typeof detailView === 'function' ? detailView({ close }) : detailView}
           emptyView={typeof emptyView === 'function' ? emptyView({ close }) : emptyView}

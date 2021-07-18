@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useCallback } from 'react'
+import React, { memo, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import debounce from 'lodash.debounce'
 import PropTypes from 'prop-types'
 import { CaretDownIcon } from '../../icons'
@@ -13,7 +13,7 @@ const SelectMenuCell = memo(function SelectMenuCell(props) {
   const [targetWidth, setTargetWidth] = useState(MIN_SELECT_MENU_WIDTH)
   const [shouldClickToggle, setShouldClickToggle] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
-  const [mainRef, setMainRef] = useState()
+  const mainRef = useRef(null)
 
   const {
     children,
@@ -26,13 +26,13 @@ const SelectMenuCell = memo(function SelectMenuCell(props) {
     ...rest
   } = props
 
-  const updateOnResize = () => {
-    if (!mainRef) return
-    const mainRefWidth = mainRef.offsetWidth
+  const updateOnResize = useCallback(() => {
+    if (!mainRef.current) return
+    const mainRefWidth = mainRef.current.offsetWidth
     setTargetWidth(Math.max(MIN_SELECT_MENU_WIDTH, mainRefWidth))
-  }
+  }, [])
 
-  const onResize = debounce(updateOnResize, 200)
+  const onResize = useMemo(() => debounce(updateOnResize, 200), [updateOnResize])
 
   useEffect(() => {
     updateOnResize()
@@ -41,12 +41,12 @@ const SelectMenuCell = memo(function SelectMenuCell(props) {
     return () => {
       window.removeEventListener('resize', onResize)
     }
-  }, [])
+  }, [updateOnResize, onResize])
 
-  const onMainRef = (getRef, ref) => {
-    setMainRef(ref)
+  const onMainRef = useCallback((getRef, ref) => {
+    mainRef.current = ref
     getRef(ref)
-  }
+  }, [])
 
   // TODO consider `useClickable`
   const handleKeyDown = (toggle, isShown, e) => {
@@ -87,6 +87,15 @@ const SelectMenuCell = memo(function SelectMenuCell(props) {
     setIsFocused(false)
   }, [])
 
+  const mergedTextProps = useMemo(
+    () => ({
+      size,
+      opacity: disabled || (!children && placeholder) ? 0.5 : 1,
+      ...textProps
+    }),
+    [size, disabled, children, placeholder, textProps]
+  )
+
   let cursor = 'default'
   if (disabled) {
     cursor = 'not-allowed'
@@ -114,11 +123,7 @@ const SelectMenuCell = memo(function SelectMenuCell(props) {
             aria-haspopup
             aria-expanded={isShown}
             cursor={isShown ? 'pointer' : cursor}
-            textProps={{
-              size,
-              opacity: disabled || (!children && placeholder) ? 0.5 : 1,
-              ...textProps
-            }}
+            textProps={mergedTextProps}
             onKeyDown={handleKeyDown.bind(null, toggle, isShown)}
             onDoubleClick={handleDoubleClick.bind(null, toggle, isShown)}
             {...rest}
