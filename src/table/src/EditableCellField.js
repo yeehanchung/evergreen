@@ -97,7 +97,7 @@ const EditableCellField = memo(function EditableCellField(props) {
       cancelAnimationFrame(latestAnimationFrame.current)
       cancel()
     }
-    // onCancel is a ref and update should intentionally on fire on mount
+    // onCancel is a ref and `update` should intentionally fire on mount
     // we don't care about firing it again on update
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

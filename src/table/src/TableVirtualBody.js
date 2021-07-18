@@ -243,9 +243,9 @@ const TableVirtualBody = memo(function TableVirtualBody(props) {
 
       // If all else fails, return the default height.
       return defaultHeight
-      // latestChildren is a ref
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // latestChildren is a ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [allowAutoHeight, useAverageAutoHeightEstimation, averageAutoHeight, defaultHeight]
   )
 
